@@ -1,0 +1,131 @@
+/* Global layout */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #f1f5f9;
+}
+
+/* Dashboard container */
+.dashboard-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 30px;
+}
+
+/* Language selector */
+select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  background: #334155;
+  color: white;
+}
+
+/* Chat container */
+.chat-container {
+  background: #0f172a;
+  border-radius: 16px;
+  padding: 20px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(0,0,0,0.4);
+}
+
+/* Messages area */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Bubbles */
+.chat-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  max-width: 75%;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.chat-bubble.user {
+  background: #3b82f6;
+  align-self: flex-end;
+}
+
+.chat-bubble.ai {
+  background: #1e293b;
+  border: 1px solid #334155;
+  align-self: flex-start;
+}
+
+.chat-bubble.loading {
+  opacity: 0.6;
+}
+
+/* Code formatting */
+pre {
+  background: #0f172a;
+  padding: 12px;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+/* Input area */
+.chat-input {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.chat-input button {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.chat-input button:hover {
+  background: #16a34a;
+}
+
+/* Error */
+.error {
+  color: #ef4444;
+  margin-top: 8px;
+}
+
+/* Smooth animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .chat-container {
+    height: 70vh;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+  }
+}

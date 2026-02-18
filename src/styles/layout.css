@@ -1,34 +1,72 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  font-family: 'Segoe UI', sans-serif;
+  font-family: "Outfit", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg-dark);
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(249, 115, 22, 0.08), transparent);
   color: var(--text-main);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
-  max-width: 1100px;
-  margin: auto;
-  padding: 20px;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.card {
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.section-card {
   background: var(--bg-card);
-  padding: 20px;
-  border-radius: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-button {
-  background: var(--primary);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+.section-header h2, .section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.section-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-button:hover {
-  background: var(--accent);
 }

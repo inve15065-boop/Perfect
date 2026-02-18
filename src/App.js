@@ -1,6 +1,6 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";import NavBar from "./components/Layout/Navbar";
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/Layout/Navbar";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
 import Dashboard from "./components/Dashboard/Dashboard";
@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <NavBar />
+      <Navbar />
 
       <Routes>
         <Route path="/register" element={<Register />} />

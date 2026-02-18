@@ -1,30 +1,41 @@
 import React, { useEffect, useState } from "react";
-import API from "../../api/api";
+import API from "../../api/api.js";
 
 const CommunityChat = ({ skill }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("pteachToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 2000);
+    if (skill) fetchMessages();
+    const interval = setInterval(() => skill && fetchMessages(), 2000);
     return () => clearInterval(interval);
   }, [skill]);
 
   const fetchMessages = async () => {
     try {
-      const res = await API.get(`/community/${skill}`);
-      setMessages(res.data);
+      const res = await API.get(`/community/messages/${skill}`, {
+        headers: getAuthHeaders(),
+      });
+      setMessages(res.data.messages || []);
     } catch (err) {
       console.error("Failed to fetch messages");
     }
   };
 
   const sendMessage = async () => {
-    if (!input) return;
+    if (!input || !skill) return;
 
     try {
-      await API.post(`/community/${skill}`, { text: input });
+      await API.post(
+        "/community/send",
+        { skill, message: input },
+        { headers: getAuthHeaders() }
+      );
       setInput("");
       fetchMessages();
     } catch (err) {
@@ -38,8 +49,8 @@ const CommunityChat = ({ skill }) => {
 
       <div className="chat-window">
         {messages.map((msg, i) => (
-          <div key={i}>
-            <strong>{msg.user}:</strong> {msg.text}
+          <div key={msg._id || i}>
+            <strong>{msg.sender?.name || "Unknown"}:</strong> {msg.message}
           </div>
         ))}
       </div>

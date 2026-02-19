@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import ChatHistory from "../AI/ChatHistory.js";
 import { FiSend } from "react-icons/fi";
 
-const API_BASE = process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
+const API_BASE =
+  process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
 
 const CommunityRoom = ({ skill }) => {
   const [messages, setMessages] = useState([]);
@@ -12,13 +13,20 @@ const CommunityRoom = ({ skill }) => {
   const chatEndRef = useRef(null);
   const token = localStorage.getItem("pteachToken");
 
-  const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = () =>
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
+    if (!skill) return;
+
     try {
-      const res = await axios.get(`${API_BASE}/api/community/messages/${skill}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${API_BASE}/api/community/messages/${skill}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       setMessages(
         (res.data.messages || []).map((msg) => ({
           sender: msg.sender?.name,
@@ -28,18 +36,21 @@ const CommunityRoom = ({ skill }) => {
     } catch (err) {
       console.error("Failed to fetch community messages", err);
     }
-  };
+  }, [skill, token]);
 
   useEffect(() => {
-    if (skill) fetchMessages();
-    const interval = setInterval(() => skill && fetchMessages(), 5000);
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, [skill]);
+  }, [fetchMessages]);
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !skill) return;
+
     setLoading(true);
     try {
       await axios.post(
@@ -47,6 +58,7 @@ const CommunityRoom = ({ skill }) => {
         { skill, message: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setNewMessage("");
       fetchMessages();
     } catch (err) {
@@ -62,6 +74,7 @@ const CommunityRoom = ({ skill }) => {
           <ChatHistory skill={skill} />
           <div ref={chatEndRef} />
         </div>
+
         <div className="chat-input">
           <input
             type="text"
@@ -70,7 +83,12 @@ const CommunityRoom = ({ skill }) => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           />
-          <button onClick={sendMessage} disabled={loading} className="btn btn-primary">
+
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            className="btn btn-primary"
+          >
             <FiSend size={18} /> {loading ? "Sending..." : "Send"}
           </button>
         </div>

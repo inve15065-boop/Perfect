@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
-import ChatHistory from "../AI/ChatHistory.js";
-import { FiSend } from "react-icons/fi";
 
-const API_BASE =
-  process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 const CommunityRoom = ({ skill }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const chatEndRef = useRef(null);
-  const token = localStorage.getItem("pteachToken");
+  const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () =>
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const token = localStorage.getItem("token");
 
+  // ✅ FIX: wrap in useCallback so ESLint is satisfied
   const fetchMessages = useCallback(async () => {
     if (!skill) return;
 
@@ -29,7 +24,7 @@ const CommunityRoom = ({ skill }) => {
 
       setMessages(
         (res.data.messages || []).map((msg) => ({
-          sender: msg.sender?.name,
+          sender: msg.sender?.name || "Unknown",
           text: msg.message,
         }))
       );
@@ -40,23 +35,24 @@ const CommunityRoom = ({ skill }) => {
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 5000);
+
     return () => clearInterval(interval);
   }, [fetchMessages]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const sendMessage = async () => {
-    if (!newMessage.trim() || !skill) return;
+    if (!newMessage.trim()) return;
 
-    setLoading(true);
     try {
       await axios.post(
         `${API_BASE}/api/community/send`,
         { skill, message: newMessage },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       setNewMessage("");
@@ -64,34 +60,36 @@ const CommunityRoom = ({ skill }) => {
     } catch (err) {
       console.error("Failed to send message", err);
     }
-    setLoading(false);
   };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <div>
-      <div className="chat-container">
-        <div className="chat-messages" style={{ flex: 1 }}>
-          <ChatHistory skill={skill} />
-          <div ref={chatEndRef} />
-        </div>
+      <h2>Community Room - {skill}</h2>
 
-        <div className="chat-input">
-          <input
-            type="text"
-            placeholder="Write a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          />
+      <div style={{ height: "300px", overflowY: "auto", border: "1px solid #ccc", padding: "10px" }}>
+        {messages.map((msg, index) => (
+          <div key={index}>
+            <strong>{msg.sender}:</strong> {msg.text}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
 
-          <button
-            onClick={sendMessage}
-            disabled={loading}
-            className="btn btn-primary"
-          >
-            <FiSend size={18} /> {loading ? "Sending..." : "Send"}
-          </button>
-        </div>
+      <div style={{ marginTop: "10px" }}>
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type a message..."
+          style={{ width: "80%", padding: "8px" }}
+        />
+        <button onClick={sendMessage} style={{ padding: "8px" }}>
+          Send
+        </button>
       </div>
     </div>
   );

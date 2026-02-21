@@ -1,19 +1,11 @@
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
+import API from "./api.js";
 
 export const getSkills = async () => {
-  const token = localStorage.getItem("pteachToken");
-  const res = await axios.get(`${API_URL}/api/skills`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await API.get("/skills");
   return res.data;
 };
 
 export const createSkill = async (skillData) => {
-  const token = localStorage.getItem("pteachToken");
-  const res = await axios.post(`${API_URL}/api/skills`, skillData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await API.post("/skills", skillData);
   return res.data;
 };

@@ -1,19 +1,11 @@
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
+import API from "./api.js";
 
 export const getPlans = async () => {
-  const token = localStorage.getItem("pteachToken");
-  const res = await axios.get(`${API_URL}/api/plans`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await API.get("/plans");
   return res.data;
 };
 
 export const createPlan = async (planData) => {
-  const token = localStorage.getItem("pteachToken");
-  const res = await axios.post(`${API_URL}/api/plans`, planData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await API.post("/plans", planData);
   return res.data;
 };

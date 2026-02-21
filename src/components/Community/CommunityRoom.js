@@ -1,95 +1,79 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import ChatHistory from "../AI/ChatHistory.js";
+import { FiSend } from "react-icons/fi";
 
-const API_BASE = process.env.REACT_APP_API_BASE;
+const API_BASE = process.env.REACT_APP_API_URL || "https://pteach-backend.onrender.com";
 
 const CommunityRoom = ({ skill }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
+  const token = localStorage.getItem("pteachToken");
 
-  const token = localStorage.getItem("token");
+  const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  // ✅ FIX: wrap in useCallback so ESLint is satisfied
-  const fetchMessages = useCallback(async () => {
-    if (!skill) return;
-
+  const fetchMessages = async () => {
     try {
-      const res = await axios.get(
-        `${API_BASE}/api/community/messages/${skill}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
+      const res = await axios.get(`${API_BASE}/api/community/messages/${skill}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setMessages(
         (res.data.messages || []).map((msg) => ({
-          sender: msg.sender?.name || "Unknown",
+          sender: msg.sender?.name,
           text: msg.message,
         }))
       );
     } catch (err) {
       console.error("Failed to fetch community messages", err);
     }
-  }, [skill, token]);
+  };
 
   useEffect(() => {
-    fetchMessages();
-
-    const interval = setInterval(() => {
-      fetchMessages();
-    }, 5000);
-
+    if (skill) fetchMessages();
+    const interval = setInterval(() => skill && fetchMessages(), 5000);
     return () => clearInterval(interval);
-  }, [fetchMessages]);
+  }, [skill]);
+
+  useEffect(scrollToBottom, [messages]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
-
+    if (!newMessage.trim() || !skill) return;
+    setLoading(true);
     try {
       await axios.post(
         `${API_BASE}/api/community/send`,
         { skill, message: newMessage },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setNewMessage("");
       fetchMessages();
     } catch (err) {
       console.error("Failed to send message", err);
     }
+    setLoading(false);
   };
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   return (
     <div>
-      <h2>Community Room - {skill}</h2>
-
-      <div style={{ height: "300px", overflowY: "auto", border: "1px solid #ccc", padding: "10px" }}>
-        {messages.map((msg, index) => (
-          <div key={index}>
-            <strong>{msg.sender}:</strong> {msg.text}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div style={{ marginTop: "10px" }}>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          style={{ width: "80%", padding: "8px" }}
-        />
-        <button onClick={sendMessage} style={{ padding: "8px" }}>
-          Send
-        </button>
+      <div className="chat-container">
+        <div className="chat-messages" style={{ flex: 1 }}>
+          <ChatHistory skill={skill} />
+          <div ref={chatEndRef} />
+        </div>
+        <div className="chat-input">
+          <input
+            type="text"
+            placeholder="Write a message..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
+          <button onClick={sendMessage} disabled={loading} className="btn btn-primary">
+            <FiSend size={18} /> {loading ? "Sending..." : "Send"}
+          </button>
+        </div>
       </div>
     </div>
   );

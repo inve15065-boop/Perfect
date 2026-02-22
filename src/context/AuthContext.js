@@ -18,8 +18,24 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       setAuthLoading(true);
       API.get("/auth/me")
-        .then((res) => setUser(res.data.user))
-        .catch(() => logout())
+        .then((res) => {
+          if (res.data?.user) {
+            setUser(res.data.user);
+          } else {
+            console.warn("[AuthContext] Invalid user data received");
+            logout();
+          }
+        })
+        .catch((err) => {
+          // Only logout on 401, not on network errors (let retry handle it)
+          if (err.response?.status === 401) {
+            console.log("[AuthContext] Token invalid, logging out");
+            logout();
+          } else {
+            console.error("[AuthContext] Error fetching user:", err);
+            // Don't logout on network errors - might be temporary
+          }
+        })
         .finally(() => setAuthLoading(false));
     } else {
       setAuthLoading(false);
@@ -33,7 +49,18 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("pteachToken");
     };
     const handleSkillSelected = () => {
-      if (token) API.get("/auth/me").then((res) => setUser(res.data.user)).catch(() => {});
+      if (token) {
+        API.get("/auth/me")
+          .then((res) => {
+            if (res.data?.user) {
+              setUser(res.data.user);
+            }
+          })
+          .catch((err) => {
+            console.error("[AuthContext] Error refreshing user after skill selection:", err);
+            // Don't logout on error - just log it
+          });
+      }
     };
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     window.addEventListener("auth:skill-selected", handleSkillSelected);

@@ -12,8 +12,38 @@ const SkillSelection = () => {
 
   useEffect(() => {
     API.get("/skills/predefined")
-      .then((res) => setSkills(res.data))
-      .catch(() => setError("Failed to load skills"))
+      .then((res) => {
+        if (res.data && Array.isArray(res.data)) {
+          setSkills(res.data);
+        } else {
+          setError("Invalid response format from server");
+        }
+      })
+      .catch((err) => {
+        let errorMessage = "Failed to load skills";
+        
+        if (err.response) {
+          // Server responded with error status
+          if (err.response.status === 404) {
+            errorMessage = "Skills endpoint not found. Please check backend configuration.";
+          } else if (err.response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          } else {
+            errorMessage = `Server error (${err.response.status}): ${err.response.data?.message || "Unknown error"}`;
+          }
+        } else if (err.code === "ERR_NETWORK") {
+          // Network error
+          errorMessage = "Cannot connect to server. Please check your internet connection and ensure the backend is running.";
+        } else if (err.code === "ECONNABORTED") {
+          // Timeout
+          errorMessage = "Request timed out. Please try again.";
+        } else {
+          errorMessage = err.message || "Failed to load skills";
+        }
+        
+        console.error("Error loading skills:", err);
+        setError(errorMessage);
+      })
       .finally(() => setLoading(false));
   }, []);
 

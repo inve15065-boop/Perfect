@@ -24,7 +24,8 @@ function Register() {
     try {
       const result = await register(form.name, form.email, form.password, form.role);
       if (result.success) {
-        navigate("/dashboard");
+        const hasSkill = result.user?.selectedSkill;
+        navigate(hasSkill ? "/dashboard" : "/skill-selection");
       } else {
         setError(result.message || "Registration failed");
       }

@@ -15,4 +15,16 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// On 401, clear token and notify auth context to logout
+API.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("pteachToken");
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default API;

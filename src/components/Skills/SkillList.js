@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { getSkills } from "../../api/skills";
+import { getSkills, deleteSkill } from "../../api/skills";
 import SkillCreate from "./SkillCreate";
-import { FiCode, FiPlus } from "react-icons/fi";
+import { FiCode, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const SkillList = () => {
   const [skills, setSkills] = useState([]);
@@ -23,6 +23,16 @@ const SkillList = () => {
   const handleAdd = (skill) => {
     setSkills((prev) => [...prev, skill]);
     setShowAdd(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this skill? Plans linked to it may be affected.")) return;
+    try {
+      await deleteSkill(id);
+      setSkills((prev) => prev.filter((s) => s._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete skill.");
+    }
   };
 
   return (
@@ -69,6 +79,14 @@ const SkillList = () => {
                 <strong>{skill.title}</strong>
                 {skill.framework && <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>— {skill.framework}</span>}
               </div>
+              <button
+                onClick={() => handleDelete(skill._id)}
+                className="btn"
+                style={{ padding: 6, color: "var(--danger, #ef4444)" }}
+                title="Delete skill"
+              >
+                <FiTrash2 size={16} />
+              </button>
             </div>
           ))}
         </div>

@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("pteachToken") || "");
+  const [authLoading, setAuthLoading] = useState(!!localStorage.getItem("pteachToken"));
 
   const logout = () => {
     setUser(null);
@@ -15,12 +16,31 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      API.get("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      setAuthLoading(true);
+      API.get("/auth/me")
         .then((res) => setUser(res.data.user))
-        .catch(() => logout());
+        .catch(() => logout())
+        .finally(() => setAuthLoading(false));
+    } else {
+      setAuthLoading(false);
     }
+  }, [token]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setToken("");
+      localStorage.removeItem("pteachToken");
+    };
+    const handleSkillSelected = () => {
+      if (token) API.get("/auth/me").then((res) => setUser(res.data.user)).catch(() => {});
+    };
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    window.addEventListener("auth:skill-selected", handleSkillSelected);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+      window.removeEventListener("auth:skill-selected", handleSkillSelected);
+    };
   }, [token]);
 
   const login = async (email, password) => {
@@ -29,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       setToken(res.data.token);
       localStorage.setItem("pteachToken", res.data.token);
       setUser(res.data.user);
-      return { success: true };
+      return { success: true, user: res.data.user };
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "Login failed";
       if (err.code === "ERR_NETWORK" || !err.response) {
@@ -45,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       setToken(res.data.token);
       localStorage.setItem("pteachToken", res.data.token);
       setUser(res.data.user);
-      return { success: true };
+      return { success: true, user: res.data.user };
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "Registration failed";
       if (err.code === "ERR_NETWORK" || !err.response) {
@@ -56,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, authLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

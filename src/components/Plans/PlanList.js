@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getPlans } from "../../api/plans";
+import { Link } from "react-router-dom";
+import { getPlans, deletePlan } from "../../api/plans";
 import PlanCreate from "./PlanCreate";
-import { FiCalendar, FiPlus } from "react-icons/fi";
+import { FiCalendar, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const PlanList = () => {
   const [plans, setPlans] = useState([]);
@@ -24,6 +25,16 @@ const PlanList = () => {
   const handleAdd = (plan) => {
     setPlans((prev) => [...prev, plan]);
     setShowAdd(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this plan?")) return;
+    try {
+      await deletePlan(id);
+      setPlans((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete plan.");
+    }
   };
 
   return (
@@ -55,27 +66,37 @@ const PlanList = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {plans.map((plan) => (
             <div key={plan._id} className="list-item">
-              <div style={{
-                width: 36,
-                height: 36,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(139, 92, 246, 0.2))",
-                borderRadius: 10,
-              }}>
-                <FiCalendar size={18} color="var(--accent-mint)" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong>{plan.title}</strong>
-                {plan.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 4 }}>{plan.description}</div>}
-                <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4 }}>
-                  Skill: {plan.skill?.title || "N/A"}
-                  {(plan.startDate || plan.endDate) && (
-                    <> • {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : "—"} — {plan.endDate ? new Date(plan.endDate).toLocaleDateString() : "—"}</>
-                  )}
+              <Link to={`/dashboard/plans/${plan._id}`} style={{ flex: 1, textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(139, 92, 246, 0.2))",
+                  borderRadius: 10,
+                }}>
+                  <FiCalendar size={18} color="var(--accent-mint)" />
                 </div>
-              </div>
+                <div>
+                  <strong>{plan.title}</strong>
+                  {plan.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 4 }}>{plan.description}</div>}
+                  <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4 }}>
+                    Skill: {plan.skill?.title || "N/A"}
+                    {(plan.startDate || plan.endDate) && (
+                      <> • {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : "—"} — {plan.endDate ? new Date(plan.endDate).toLocaleDateString() : "—"}</>
+                    )}
+                  </div>
+                </div>
+              </Link>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(plan._id); }}
+                className="btn"
+                style={{ padding: 6, color: "var(--danger, #ef4444)" }}
+                title="Delete plan"
+              >
+                <FiTrash2 size={16} />
+              </button>
             </div>
           ))}
         </div>

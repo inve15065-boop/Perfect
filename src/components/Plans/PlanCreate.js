@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { createPlan } from "../../api/plans";
-import { getSkills } from "../../api/skills";
+import { getSkills, getPredefinedSkills } from "../../api/skills";
 import { FiPlus } from "react-icons/fi";
 
 const PlanCreate = ({ onAdd }) => {
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [skill, setSkill] = useState("");
+  const [skill, setSkill] = useState(user?.selectedSkill?._id || "");
   const [skills, setSkills] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -14,14 +16,19 @@ const PlanCreate = ({ onAdd }) => {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const data = await getSkills();
-        setSkills(Array.isArray(data) ? data : []);
+        const [predefined, custom] = await Promise.all([
+          getPredefinedSkills(),
+          getSkills(),
+        ]);
+        const combined = [...(Array.isArray(predefined) ? predefined : []), ...(Array.isArray(custom) ? custom : [])];
+        setSkills(combined);
+        if (!skill && user?.selectedSkill?._id) setSkill(user.selectedSkill._id);
       } catch (err) {
         setSkills([]);
       }
     };
     fetchSkills();
-  }, []);
+  }, [user?.selectedSkill?._id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

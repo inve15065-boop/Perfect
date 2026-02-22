@@ -11,7 +11,7 @@ const SkillSelection = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    API.get("/api/skills/predefined")
+    API.get("/skills/predefined")
       .then((res) => setSkills(res.data))
       .catch(() => setError("Failed to load skills"))
       .finally(() => setLoading(false));

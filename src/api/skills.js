@@ -6,7 +6,7 @@ export const getSkills = async () => {
 };
 
 export const getPredefinedSkills = async () => {
-  const res = await API.get("/api/skills/predefined");
+  const res = await API.get("/skills/predefined");
   return res.data;
 };
 

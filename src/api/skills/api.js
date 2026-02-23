@@ -1,8 +1,45 @@
 import axios from "axios";
 import API_BASE_URL from "../config.js";
 
+// Dynamic API prefix detection: supports deployments with or without "/api"
+let apiPrefix = (typeof window !== "undefined" && localStorage.getItem("pteachApiPrefix")) || null; // "/api" | "" | null
+let resolvingPrefix = null;
+
+const detectPrefix = async () => {
+  if (apiPrefix !== null) return apiPrefix;
+  if (resolvingPrefix) {
+    try {
+      return await resolvingPrefix;
+    } catch {
+      // fall through
+    }
+  }
+  resolvingPrefix = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/health`, { method: "GET", mode: "cors" });
+      if (res.ok) {
+        apiPrefix = "/api";
+        localStorage.setItem("pteachApiPrefix", apiPrefix);
+        return apiPrefix;
+      }
+    } catch {}
+    try {
+      const res2 = await fetch(`${API_BASE_URL}/health`, { method: "GET", mode: "cors" });
+      if (res2.ok) {
+        apiPrefix = "";
+        localStorage.setItem("pteachApiPrefix", apiPrefix);
+        return apiPrefix;
+      }
+    } catch {}
+    apiPrefix = "/api";
+    localStorage.setItem("pteachApiPrefix", apiPrefix);
+    return apiPrefix;
+  })();
+  return resolvingPrefix;
+};
+
 const API = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: `${API_BASE_URL}`,
   timeout: 60000,
 });
 
@@ -41,7 +78,22 @@ const retryRequest = async (error, retryCount = 0) => {
 
 // Request interceptor - logging and token attachment
 API.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    try {
+      const prefix = await detectPrefix();
+      if (!config.__prefixed) {
+        if (typeof config.url === "string" && !config.url.startsWith(prefix)) {
+          config.url = `${prefix}${config.url}`;
+        }
+        config.__prefixed = true;
+      }
+    } catch {
+      // If detection fails, default to "/api"
+      if (!config.__prefixed) {
+        config.url = `/api${config.url}`;
+        config.__prefixed = true;
+      }
+    }
     const token = localStorage.getItem("pteachToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -105,7 +157,10 @@ API.interceptors.response.use(
       try {
         if (!err.config.__triedNoApiBase) {
           err.config.__triedNoApiBase = true;
-          const fallbackUrl = `${API_BASE_URL}${err.config.url}`;
+          // Remove "/api" prefix if present and retry once
+          let cleanPath = err.config.url || "";
+          cleanPath = cleanPath.replace(/^\/api(\/|$)/, "/");
+          const fallbackUrl = `${API_BASE_URL}${cleanPath}`;
           console.warn(`[API 404] Retrying without /api prefix → ${fallbackUrl}`);
           const response = await axios({
             method: err.config.method,

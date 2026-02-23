@@ -100,8 +100,28 @@ API.interceptors.response.use(
       return Promise.reject(err);
     }
 
-    // Handle 404 Not Found - provide helpful error message (don't retry)
+    // Handle 404 Not Found - attempt fallback without /api prefix once
     if (err.response?.status === 404) {
+      try {
+        if (!err.config.__triedNoApiBase) {
+          err.config.__triedNoApiBase = true;
+          const fallbackUrl = `${API_BASE_URL}${err.config.url}`;
+          console.warn(`[API 404] Retrying without /api prefix → ${fallbackUrl}`);
+          const response = await axios({
+            method: err.config.method,
+            url: fallbackUrl,
+            headers: err.config.headers,
+            data: err.config.data,
+            timeout: err.config.timeout,
+          });
+          return response;
+        }
+      } catch (retryNoApiErr) {
+        console.error(
+          `[API 404] Fallback without /api failed for ${errorDetails.url}:`,
+          retryNoApiErr.response?.status || retryNoApiErr.message
+        );
+      }
       console.error(
         `[API 404] Endpoint not found: ${errorDetails.fullURL}\n` +
         `This usually means:\n` +
